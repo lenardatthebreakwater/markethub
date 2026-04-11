@@ -128,9 +128,8 @@ export default function SignUpPage() {
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg px-8 py-8 overflow-hidden relative">
         <div className="flex flex-col items-center mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <img src="/logo.png" alt="MarketHub Logo" className="h-8 w-auto rounded object-contain" />
-            <span className="text-2xl font-bold text-[#1e4d2b]">MarketHub</span>
+          <div className="flex items-center justify-center mb-1">
+            <img src="/logo.png" alt="MarketHub Logo" className="h-16 w-auto object-contain" />
           </div>
           <p className="text-gray-500 text-sm mt-1">Create your vendor account</p>
         </div>
