@@ -1,8 +1,6 @@
 import { auth } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
+import { put } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
-import { join } from 'path'
-import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,16 +32,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const ext = file.name.split('.').pop() || 'jpg'
-    const filename = `${randomUUID()}.${ext}`
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'stalls')
+    const blob = await put(`stalls/${file.name}`, file, { access: 'public' })
 
-    await mkdir(uploadDir, { recursive: true })
-
-    const bytes = await file.arrayBuffer()
-    await writeFile(join(uploadDir, filename), Buffer.from(bytes))
-
-    return NextResponse.json({ url: `/uploads/stalls/${filename}` })
+    return NextResponse.json({ url: blob.url })
   } catch (error) {
     console.error('Error uploading stall image:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

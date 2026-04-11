@@ -77,7 +77,6 @@ export default function VendorPaymentsPage() {
       toast.error('Something went wrong. Please try again.')
     } finally {
       setUploading(null)
-      // Clear the file input so the same file can be re-selected if needed
       if (fileInputRefs.current[payment.id]) {
         fileInputRefs.current[payment.id]!.value = ''
       }
@@ -85,10 +84,10 @@ export default function VendorPaymentsPage() {
   }
 
   const canUpload = (status: string) =>
-    status === 'PENDING' || status === 'REJECTED'
+    status === 'PENDING' || status === 'REJECTED' || status === 'OVERDUE'
 
   const totalDue = payments
-    .filter((p) => p.status === 'PENDING')
+    .filter((p) => ['PENDING', 'OVERDUE'].includes(p.status))
     .reduce((sum, p) => sum + p.amount, 0)
 
   const totalPaid = payments
@@ -119,8 +118,50 @@ export default function VendorPaymentsPage() {
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
-        <strong>How to pay:</strong> Transfer your payment via GCash, bank transfer, or any method agreed with the admin, then upload your proof of payment below.
+      {/* Payment Details */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-1">Payment Details</h2>
+          <p className="text-xs text-gray-500">Transfer your payment using any of the methods below, then upload your proof of payment.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* GCash */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded">GCash</div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Account Name</span>
+                <span className="font-semibold text-gray-800">Luisito R. Navarro</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">GCash Number</span>
+                <span className="font-semibold text-gray-800">0917 123 4567</span>
+              </div>
+            </div>
+          </div>
+          {/* Bank Transfer */}
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-[#1e4d2b] text-white text-xs font-bold px-2 py-1 rounded">Bank Transfer</div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Bank</span>
+                <span className="font-semibold text-gray-800">Land Bank of the Philippines</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Account Name</span>
+                <span className="font-semibold text-gray-800">Boac Public Market</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Account Number</span>
+                <span className="font-semibold text-gray-800">1234-5678-90</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -179,7 +220,6 @@ export default function VendorPaymentsPage() {
                     <td className="px-4 py-3">
                       {canUpload(p.status) && (
                         <>
-                          {/* Hidden file input per row */}
                           <input
                             type="file"
                             accept="image/jpeg,image/png,image/webp,application/pdf"

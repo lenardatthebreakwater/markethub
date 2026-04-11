@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-
 const prisma = new PrismaClient();
 
 async function main() {
@@ -20,7 +19,7 @@ async function main() {
   });
   console.log('✅ Admin user created:', admin.email);
 
-  // Create vendor user
+  // Create vendor user with complete profile
   const vendorPassword = await bcrypt.hash('vendor123456', 10);
   const vendor = await prisma.user.upsert({
     where: { email: 'vendor@markethub.local' },
@@ -28,8 +27,26 @@ async function main() {
     create: {
       email: 'vendor@markethub.local',
       password: vendorPassword,
-      name: 'Sample Vendor',
+      name: 'Juan dela Cruz',
       role: 'VENDOR',
+      vendorProfile: {
+        create: {
+          businessName: 'Dela Cruz Fresh Produce',
+          businessType: 'Vegetables & Fruits',
+          ownerName: 'Juan dela Cruz',
+          contactNumber: '09171234567',
+          alternateContactNumber: '09281234567',
+          address: '123 Rizal Street',
+          barangay: 'Barangay Isok I',
+          municipality: 'Boac',
+          province: 'Marinduque',
+          zipCode: '4900',
+          businessPermitNumber: 'BP-2024-00123',
+          tinNumber: '123-456-789-000',
+          status: 'APPROVED',
+          approvalDate: new Date(),
+        },
+      },
     },
   });
   console.log('✅ Vendor user created:', vendor.email);
