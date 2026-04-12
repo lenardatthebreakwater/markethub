@@ -46,7 +46,7 @@ function ImageCarousel({ images, height = 'h-40' }: { images: string[]; height?:
         src={images[current]}
         alt={`Stall photo ${current + 1}`}
         fill
-        className="object-cover transition-opacity duration-300"
+        className="object-contain transition-opacity duration-300"
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
       />
       {images.length > 1 && (
