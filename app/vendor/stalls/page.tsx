@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { X, MapPin, Maximize, CircleDollarSign, Info, ArrowRight, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Stall {
   id: string
@@ -27,7 +28,6 @@ function parseImages(raw: string | null): string[] {
   try { return JSON.parse(raw) } catch { return [] }
 }
 
-// Simple image carousel used in both card and modal
 function ImageCarousel({ images, height = 'h-40' }: { images: string[]; height?: string }) {
   const [current, setCurrent] = useState(0)
 
@@ -42,10 +42,12 @@ function ImageCarousel({ images, height = 'h-40' }: { images: string[]; height?:
 
   return (
     <div className={`${height} relative overflow-hidden bg-gray-100`}>
-      <img
+      <Image
         src={images[current]}
         alt={`Stall photo ${current + 1}`}
-        className="w-full h-full object-cover transition-opacity duration-300"
+        fill
+        className="object-cover transition-opacity duration-300"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
       />
       {images.length > 1 && (
         <>

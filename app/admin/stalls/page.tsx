@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, X, ImagePlus, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 
 interface Stall {
   id: string
@@ -14,9 +15,29 @@ interface Stall {
   occupiedBy: string | null
   occupationDate: string | null
   images: string | null
+  productType: string | null
 }
 
-const emptyForm = { stallNumber: '', location: '', size: '', monthlyRate: '', status: 'AVAILABLE' }
+const emptyForm = {
+  stallNumber: '',
+  location: '',
+  size: '',
+  monthlyRate: '',
+  status: 'AVAILABLE',
+}
+
+const PRODUCT_TYPES = [
+  'Vegetables & Fruits',
+  'Meat & Seafood',
+  'Dry Goods',
+  'Cooked Food',
+  'Clothing & Apparel',
+  'Hardware & Tools',
+  'Flowers & Plants',
+  'Dairy & Eggs',
+  'Beverages',
+  'Others',
+]
 
 const StatusBadge = ({ status }: { status: string }) => {
   let bg = 'bg-gray-100 text-gray-700'
@@ -30,7 +51,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   )
 }
 
-function parseImages(raw: string | null): string[] {
+function parseJSON(raw: string | null): string[] {
   if (!raw) return []
   try { return JSON.parse(raw) } catch { return [] }
 }
@@ -40,7 +61,8 @@ export default function AdminStallsPage() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState<{ open: boolean; editId: string | null }>({ open: false, editId: null })
   const [form, setForm] = useState(emptyForm)
-  const [images, setImages] = useState<string[]>([]) // uploaded image URLs
+  const [images, setImages] = useState<string[]>([])
+  const [productTypes, setProductTypes] = useState<string[]>([])
   const [uploadingImg, setUploadingImg] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
@@ -58,13 +80,27 @@ export default function AdminStallsPage() {
   function openCreate() {
     setForm(emptyForm)
     setImages([])
+    setProductTypes([])
     setModal({ open: true, editId: null })
   }
 
   function openEdit(s: Stall) {
-    setForm({ stallNumber: s.stallNumber, location: s.location, size: s.size || '', monthlyRate: s.monthlyRate.toString(), status: s.status })
-    setImages(parseImages(s.images))
+    setForm({
+      stallNumber: s.stallNumber,
+      location: s.location,
+      size: s.size || '',
+      monthlyRate: s.monthlyRate.toString(),
+      status: s.status,
+    })
+    setImages(parseJSON(s.images))
+    setProductTypes(parseJSON(s.productType))
     setModal({ open: true, editId: s.id })
+  }
+
+  function toggleProductType(type: string) {
+    setProductTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    )
   }
 
   async function handleImageUpload(file: File) {
@@ -103,7 +139,7 @@ export default function AdminStallsPage() {
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, images }),
+      body: JSON.stringify({ ...form, images, productType: productTypes }),
     })
     const data = await res.json()
     if (res.ok) {
@@ -163,7 +199,7 @@ export default function AdminStallsPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  {['Stall #', 'Images', 'Location', 'Size', 'Rate/Month', 'Status', 'Occupied Since', 'Actions'].map((h) => (
+                  {['Stall #', 'Images', 'Location', 'Size', 'Rate/Month', 'Product Types', 'Status', 'Occupied Since', 'Actions'].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
@@ -172,7 +208,8 @@ export default function AdminStallsPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {stalls.map((s) => {
-                  const imgs = parseImages(s.images)
+                  const imgs = parseJSON(s.images)
+                  const types = parseJSON(s.productType)
                   return (
                     <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-semibold text-gray-800">#{s.stallNumber}</td>
@@ -180,7 +217,7 @@ export default function AdminStallsPage() {
                         {imgs.length > 0 ? (
                           <div className="flex gap-1">
                             {imgs.slice(0, 3).map((url, i) => (
-                              <img key={i} src={url} alt="" className="h-9 w-9 rounded object-cover border border-gray-200" />
+                              <Image key={i} src={url} alt="" className="h-9 w-9 rounded object-cover border border-gray-200" />
                             ))}
                           </div>
                         ) : (
@@ -190,6 +227,19 @@ export default function AdminStallsPage() {
                       <td className="px-4 py-3 text-gray-600">{s.location}</td>
                       <td className="px-4 py-3 text-gray-500">{s.size || '—'}</td>
                       <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">₱{s.monthlyRate.toLocaleString()}</td>
+                      <td className="px-4 py-3">
+                        {types.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {types.map((t) => (
+                              <span key={t} className="text-[10px] font-semibold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 whitespace-nowrap">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                         {s.occupationDate ? new Date(s.occupationDate).toLocaleDateString('en-PH') : '—'}
@@ -228,7 +278,6 @@ export default function AdminStallsPage() {
             <h2 className="font-bold text-gray-800 mb-5">{modal.editId ? 'Edit Stall' : 'Add New Stall'}</h2>
 
             <div className="space-y-4">
-              {/* Basic fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Stall Number *</label>
@@ -250,6 +299,7 @@ export default function AdminStallsPage() {
                   />
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1">Location *</label>
                 <input
@@ -259,6 +309,7 @@ export default function AdminStallsPage() {
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1e4d2b]"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Size</label>
@@ -277,9 +328,34 @@ export default function AdminStallsPage() {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1e4d2b] bg-white"
                   >
                     <option value="AVAILABLE">Available</option>
-                    <option value="OCCUPIED">Occupied</option>
                     <option value="UNDER_MAINTENANCE">Under Maintenance</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Product Type Multiselect */}
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-2">
+                  Allowed Product Types <span className="text-gray-400 font-normal">({productTypes.length} selected)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {PRODUCT_TYPES.map((type) => {
+                    const selected = productTypes.includes(type)
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleProductType(type)}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                          selected
+                            ? 'bg-[#1e4d2b] text-white border-[#1e4d2b]'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-[#1e4d2b] hover:text-[#1e4d2b]'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -288,15 +364,10 @@ export default function AdminStallsPage() {
                 <label className="text-xs font-medium text-gray-500 block mb-2">
                   Stall Images <span className="text-gray-400 font-normal">({images.length}/3)</span>
                 </label>
-
                 <div className="flex gap-2 flex-wrap">
                   {images.map((url, i) => (
                     <div key={i} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Stall image ${i + 1}`}
-                        className="h-20 w-20 object-cover rounded-lg border border-gray-200"
-                      />
+                      <Image src={url} alt={`Stall image ${i + 1}`} className="h-20 w-20 object-cover rounded-lg border border-gray-200" />
                       <button
                         onClick={() => removeImage(i)}
                         className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"
@@ -305,7 +376,6 @@ export default function AdminStallsPage() {
                       </button>
                     </div>
                   ))}
-
                   {images.length < 3 && (
                     <>
                       <input

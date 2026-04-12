@@ -8,14 +8,13 @@ export async function PUT(
 ) {
   try {
     const session = await auth()
-
     if (!session?.user?.email || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
     const body = await request.json()
-    const { stallNumber, location, size, monthlyRate, images } = body
+    const { stallNumber, location, size, monthlyRate, status, images, productType } = body
 
     if (stallNumber) {
       const conflict = await prisma.stall.findFirst({
@@ -36,7 +35,9 @@ export async function PUT(
         ...(location !== undefined && { location }),
         ...(size !== undefined && { size }),
         ...(monthlyRate !== undefined && { monthlyRate: parseFloat(monthlyRate) }),
+        ...(status !== undefined && { status }),
         ...(images !== undefined && { images: JSON.stringify(images) }),
+        ...(productType !== undefined && { productType: JSON.stringify(productType) }),
       },
     })
 
@@ -53,13 +54,11 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
-
     if (!session?.user?.email || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
-
     const stall = await prisma.stall.findUnique({ where: { id } })
 
     if (!stall) {
@@ -74,7 +73,6 @@ export async function DELETE(
     }
 
     await prisma.stall.delete({ where: { id } })
-
     return NextResponse.json({ message: 'Stall deleted successfully.' })
   } catch (error) {
     console.error('Error deleting stall:', error)
