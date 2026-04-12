@@ -95,7 +95,7 @@ export default function Sidebar() {
   }, [isAdmin, session?.user?.id])
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-52 bg-[#1e4d2b] flex flex-col z-40 shadow-xl border-r border-[#2d6a4f]">
+    <aside className="fixed left-0 top-0 h-full w-52 bg-[#163822] flex flex-col z-40 shadow-xl border-r border-[#2d6a4f]">
       {/* Logo */}
       <div className="flex items-center justify-center px-5 py-6 border-b border-white/10">
         <img src="/logo2.png" alt="MarketHub Logo" className="h-10 w-auto object-contain" />
