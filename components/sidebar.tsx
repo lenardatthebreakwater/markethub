@@ -13,8 +13,7 @@ import {
   FileText,
   Users,
   BarChart3,
-  LogOut,
-  Settings
+  LogOut
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,7 +33,6 @@ const adminLinks = [
   { href: '/admin/stalls', label: 'Stalls Management', icon: Store },
   { href: '/admin/vendors', label: 'User Management', icon: Users },
   { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function Sidebar() {

@@ -243,7 +243,7 @@ export default function VendorStallsPage() {
               </button>
 
               {/* Full-size carousel in modal */}
-              <div className="h-60 relative">
+              <div className="relative h-60">
                 <ImageCarousel images={imgs} height="h-60" />
                 {imgs.length === 0 && (
                   <div className="absolute inset-0 flex items-end p-5">
