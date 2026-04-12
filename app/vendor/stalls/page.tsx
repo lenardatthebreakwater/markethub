@@ -177,7 +177,7 @@ export default function VendorStallsPage() {
                 className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-[#1e4d2b]/30 transition-all duration-300 cursor-pointer flex flex-col"
               >
                 {/* Image area with carousel */}
-                <div className="relative">
+                <div className="relative h-40">
                   <ImageCarousel images={imgs} height="h-40" />
                   <div className="absolute top-3 right-3 z-10">
                     {getStatusBadge(stall.status)}

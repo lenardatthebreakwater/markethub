@@ -217,7 +217,9 @@ export default function AdminStallsPage() {
                         {imgs.length > 0 ? (
                           <div className="flex gap-1">
                             {imgs.slice(0, 3).map((url, i) => (
-                              <Image key={i} src={url} alt="" className="h-9 w-9 rounded object-cover border border-gray-200" />
+                              <div key={i} className="relative h-9 w-9 rounded overflow-hidden border border-gray-200">
+                                <Image src={url} alt="" fill className="object-cover" sizes="36px" />
+                              </div>
                             ))}
                           </div>
                         ) : (
@@ -367,7 +369,9 @@ export default function AdminStallsPage() {
                 <div className="flex gap-2 flex-wrap">
                   {images.map((url, i) => (
                     <div key={i} className="relative group">
-                      <Image src={url} alt={`Stall image ${i + 1}`} className="h-20 w-20 object-cover rounded-lg border border-gray-200" />
+                      <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-gray-200">
+                        <Image src={url} alt={`Stall image ${i + 1}`} fill className="object-cover" sizes="80px" />
+                      </div>
                       <button
                         onClick={() => removeImage(i)}
                         className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"
