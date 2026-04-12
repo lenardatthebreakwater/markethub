@@ -90,6 +90,7 @@ model Stall {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   images        String?
+  productType   String?
 
   applications  StallApplication[]
   payments      Payment[]
