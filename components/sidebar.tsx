@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
   Store,
@@ -13,9 +14,9 @@ import {
   FileText,
   Users,
   BarChart3,
-  LogOut
+  LogOut,
+  Settings
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 const vendorLinks = [
   { href: '/vendor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
