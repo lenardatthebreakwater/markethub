@@ -15,7 +15,7 @@ import {
   Users,
   BarChart3,
   LogOut,
-  Settings
+  ShieldCheck
 } from 'lucide-react'
 
 const vendorLinks = [
