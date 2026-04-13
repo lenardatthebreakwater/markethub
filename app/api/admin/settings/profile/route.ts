@@ -11,12 +11,25 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { name, email, password } = body
-    
+    const { name, email, password, currentPassword } = body
+
     const updateData: any = {}
     if (name) updateData.name = name
     if (email) updateData.email = email
+
     if (password && password.trim() !== '') {
+      // Verify current password first
+      const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+      if (!user?.password) {
+        return NextResponse.json({ error: 'No password set on this account.' }, { status: 400 })
+      }
+      if (!currentPassword) {
+        return NextResponse.json({ error: 'Current password is required.' }, { status: 400 })
+      }
+      const isValid = await bcrypt.compare(currentPassword, user.password)
+      if (!isValid) {
+        return NextResponse.json({ error: 'Current password is incorrect.' }, { status: 400 })
+      }
       updateData.password = await bcrypt.hash(password, 10)
     }
 

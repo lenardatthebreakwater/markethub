@@ -33,6 +33,7 @@ const adminLinks = [
   { href: '/admin/stalls', label: 'Stalls Management', icon: Store },
   { href: '/admin/vendors', label: 'User Management', icon: Users },
   { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/admin/security', label: 'Security', icon: ShieldCheck }
 ]
 
 export default function Sidebar() {
