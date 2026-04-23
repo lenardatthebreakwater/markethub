@@ -1,9 +1,37 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
+import { signIn } from 'next-auth/react'
+
+const MARINDUQUE_DATA = {
+  "Boac": {
+    zip: "4900",
+    barangays: ["Agos", "Antipolo", "Badias", "Balagbag", "Balanacan (Poblacion)", "Bantad", "Baybay Bajo", "Baybay Ibinanga", "Baybayanan", "Binoboy", "Buliasnin", "Catubtub", "Cawit", "Dawis", "Libtang", "Lupac", "Mabuhay", "Maligaya", "Mapote", "Marcos", "Matanding", "Murallon (Poblacion)", "Ogbac", "Pawa", "Pili", "Poctoy", "Poras", "Putting Buhangin", "Puyog", "Sabong", "San Miguel (Poblacion)", "Santol", "Sawi", "Tabi", "Tabigue", "Tanza"]
+  },
+  "Buenavista": {
+    zip: "4904",
+    barangays: ["Bacoro", "Bagacay", "Banuyo", "Belarmino", "Budbudin", "Cabugao", "Dayan", "Gabion", "Malapay", "Mangiliol", "Masiga", "Poblacion", "Sabang", "Tagum", "Yaw-Yaw"]
+  },
+  "Gasan": {
+    zip: "4905",
+    barangays: ["Bacong-Bacong", "Bacong-Bukal", "Bangkal", "Banotbot", "Caigangan", "Dalaguete", "Dili", "Gabao", "Gogon", "Libtang", "Mahunod", "Malaruhat", "Mangiliol", "Marcos", "Napaan", "Pinggan", "Poblacion", "Tabionan", "Talao", "Taliongtiong", "Tamao", "Tiguion", "Uson"]
+  },
+  "Mogpog": {
+    zip: "4901",
+    barangays: ["Argao", "Balanacan", "Ino", "Janagdong", "Lamesa", "Laon", "Magapua", "Malayak", "Malusak", "Mampaitan", "Mangyan-Mababad", "Poblacion", "Silangan", "Sumangga", "Tarug", "Villa Mendez"]
+  },
+  "Santa Cruz": {
+    zip: "4902",
+    barangays: ["Alobo", "Angas", "Aturan", "Bagong Silang Poblacion", "Baguidbirin", "Matalaba", "Mongpong", "Morales", "Napo", "Pag-asa Poblacion", "Pantayin", "Polo", "Pulong-Parang", "Punong"]
+  },
+  "Torrijos": {
+    zip: "4903",
+    barangays: ["Agogoo", "Amoingon", "Bahi", "Buenavista", "Cabuyao", "Candahon", "Dawis", "Del Carmen", "Green Village", "Mabuhay", "Malakas", "Marlanga", "Paynosa", "Poblacion", "San Andres B.", "San Andres V.", "San Isidro", "San Jose", "San Roque", "Santa Cruz", "Santo Cristo", "Semirara", "Suha", "Tabionan", "Tagumpay", "Tambunan", "Tiguion"]
+  }
+}
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -12,45 +40,89 @@ export default function SignUpPage() {
   const [step, setStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const lastStepChangeTime = useRef<number>(0)
 
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', confirmPassword: '',
     ownerName: '', contactNumber: '', businessName: '', businessType: '',
-    address: '', barangay: '', municipality: '', province: '', zipCode: ''
+    address: '', barangay: '', municipality: '', province: 'Marinduque', zipCode: ''
   })
 
+  useEffect(() => {
+    if (formData.municipality && MARINDUQUE_DATA[formData.municipality as keyof typeof MARINDUQUE_DATA]) {
+      setFormData(prev => ({
+        ...prev,
+        zipCode: MARINDUQUE_DATA[formData.municipality as keyof typeof MARINDUQUE_DATA].zip
+      }))
+    }
+  }, [formData.municipality])
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }))
+    setTouched(prev => ({ ...prev, [name]: true }))
+
+    if (name === 'municipality') {
+      setFormData(prev => ({ ...prev, barangay: '' }))
+    }
+  }
+
+  function handleBlur(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
+    setTouched(prev => ({ ...prev, [e.target.name]: true }))
+  }
+
+  const isInvalid = (name: keyof typeof formData) => {
+    function getInvalidStatus(n: keyof typeof formData) {
+      if (!touched[n]) return false;
+      if (n === 'email') return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+      if (n === 'password') return formData.password.length < 8;
+      if (n === 'confirmPassword') return formData.password !== formData.confirmPassword;
+      return !formData[n];
+    }
+    return getInvalidStatus(name);
+  }
+
+  const getBorderColor = (name: keyof typeof formData) => {
+    return isInvalid(name) ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-200 focus:border-[#1e4d2b]'
   }
 
   // Basic validation before going next
   function handleNext() {
     setError('')
+
+    let fieldsToTouch: (keyof typeof formData)[] = [];
+
     if (step === 1) {
-      if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-        setError('Please fill in all account fields.')
-        return
-      }
-      if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match.')
-        return
-      }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(formData.email)) {
-        setError('Please provide a valid email format.')
-        return
-      }
-      if (formData.password.length < 8) {
-        setError('Password must be at least 8 characters.')
+      fieldsToTouch = ['name', 'email', 'password', 'confirmPassword'];
+      const hasEmpty = !formData.name || !formData.email || !formData.password || !formData.confirmPassword;
+      const invalidEmail = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+      const invalidPass = formData.password.length < 8
+      const mismatch = formData.password !== formData.confirmPassword
+
+      if (hasEmpty || invalidEmail || invalidPass || mismatch) {
+        setTouched(prev => ({
+          ...prev,
+          name: true, email: true, password: true, confirmPassword: true
+        }))
+        if (hasEmpty) setError('Please fill in all account fields.')
+        else if (mismatch) setError('Passwords do not match.')
+        else if (invalidEmail) setError('Please provide a valid email format.')
+        else if (invalidPass) setError('Password must be at least 8 characters.')
         return
       }
     } else if (step === 2) {
+      fieldsToTouch = ['ownerName', 'contactNumber', 'businessName', 'businessType'];
       if (!formData.ownerName || !formData.contactNumber || !formData.businessName || !formData.businessType) {
+        setTouched(prev => ({
+          ...prev,
+          ownerName: true, contactNumber: true, businessName: true, businessType: true
+        }))
         setError('Please fill in all business details.')
         return
       }
     }
+
     setStep(prev => prev + 1)
     lastStepChangeTime.current = Date.now()
   }
@@ -63,12 +135,10 @@ export default function SignUpPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     
-    // Prevent accidental form submissions if the user rapidly double-clicked the 'Next' button
     if (Date.now() - lastStepChangeTime.current < 500) {
        return
     }
 
-    // If the user presses 'Enter' on Step 1 or 2, intercept it and treat it as 'Next' instead of final submit
     if (step < 3) {
       handleNext()
       return
@@ -76,8 +146,11 @@ export default function SignUpPage() {
 
     setError('')
     
-    // Final step validation
     if (!formData.address || !formData.barangay || !formData.municipality || !formData.province || !formData.zipCode) {
+      setTouched(prev => ({
+        ...prev,
+        address: true, barangay: true, municipality: true, province: true, zipCode: true
+      }))
       setError('Please fill in all address fields.')
       return
     }
@@ -95,7 +168,19 @@ export default function SignUpPage() {
         setLoading(false)
         return 
       }
-      router.push('/auth/signin?registered=true')
+
+      // Auto login after successful signup
+      const signInRes = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
+
+      if (!signInRes?.error) {
+        router.push('/vendor/dashboard')
+      } else {
+        router.push('/auth/signin?registered=true')
+      }
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
@@ -104,7 +189,7 @@ export default function SignUpPage() {
 
   const field = (name: keyof typeof formData, label: string, type = 'text', placeholder = '') => (
     <div>
-      <label className="text-xs font-medium text-gray-500 block mb-1">
+      <label className={`text-xs font-medium block mb-1 ${isInvalid(name) ? 'text-red-500' : 'text-gray-500'}`}>
         {label} <span className="text-red-500">*</span>
       </label>
       <input
@@ -113,10 +198,15 @@ export default function SignUpPage() {
         placeholder={placeholder || label}
         value={formData[name]}
         onChange={handleChange}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1e4d2b] transition-colors"
+        onBlur={handleBlur}
+        className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${getBorderColor(name)}`}
       />
     </div>
   )
+
+  const availableBarangays = formData.municipality && MARINDUQUE_DATA[formData.municipality as keyof typeof MARINDUQUE_DATA] 
+    ? MARINDUQUE_DATA[formData.municipality as keyof typeof MARINDUQUE_DATA].barangays 
+    : []
 
   return (
     <div
@@ -165,16 +255,17 @@ export default function SignUpPage() {
                 
                 {/* Custom Password Field */}
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">
+                  <label className={`text-xs font-medium block mb-1 ${isInvalid('password') ? 'text-red-500' : 'text-gray-500'}`}>
                     Password <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative flex items-center border border-gray-200 rounded-lg px-3 py-2 focus-within:border-[#1e4d2b] transition-colors bg-white">
+                  <div className={`relative flex items-center border rounded-lg px-3 py-2 transition-colors bg-white ${getBorderColor('password')}`}>
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Min. 8 characters"
                       value={formData.password}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       className="w-full text-sm focus:outline-none bg-transparent pr-8"
                     />
                     <button
@@ -189,16 +280,17 @@ export default function SignUpPage() {
 
                 {/* Custom Confirm Password Field */}
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">
+                  <label className={`text-xs font-medium block mb-1 ${isInvalid('confirmPassword') ? 'text-red-500' : 'text-gray-500'}`}>
                     Confirm Password <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative flex items-center border border-gray-200 rounded-lg px-3 py-2 focus-within:border-[#1e4d2b] transition-colors bg-white">
+                  <div className={`relative flex items-center border rounded-lg px-3 py-2 transition-colors bg-white ${getBorderColor('confirmPassword')}`}>
                     <input
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Re-enter password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       className="w-full text-sm focus:outline-none bg-transparent pr-8"
                     />
                     <button
@@ -221,14 +313,15 @@ export default function SignUpPage() {
                 {field('contactNumber', 'Contact Number', 'tel', '09XXXXXXXXX')}
                 {field('businessName', 'Business Name', 'text', "Juan's Store")}
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">
+                  <label className={`text-xs font-medium block mb-1 ${isInvalid('businessType') ? 'text-red-500' : 'text-gray-500'}`}>
                     Business Type <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="businessType"
                     value={formData.businessType}
                     onChange={handleChange}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1e4d2b] bg-white transition-colors"
+                    onBlur={handleBlur}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none bg-white transition-colors ${getBorderColor('businessType')}`}
                   >
                     <option value="">Select type</option>
                     <option>Vegetables & Fruits</option>
@@ -245,13 +338,77 @@ export default function SignUpPage() {
 
             {/* Step 3: Address Info */}
             <div className={`space-y-4 absolute w-full transition-all duration-500 ease-in-out ${step === 3 ? 'translate-x-0 opacity-100 relative' : step > 3 ? '-translate-x-full opacity-0' : 'translate-x-full opacity-0'}`}>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Step 3: Address</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Step 3: Address (Marinduque Only)</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {field('address', 'Street Address')}
-                {field('barangay', 'Barangay')}
-                {field('municipality', 'Municipality', 'text', 'Boac')}
-                {field('province', 'Province', 'text', 'Marinduque')}
-                {field('zipCode', 'Zip Code', 'text', '4900')}
+                {field('address', 'Street / House No.')}
+                
+                {/* Province (Fixed) */}
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">
+                    Province <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="province"
+                    value="Marinduque"
+                    disabled
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 outline-none"
+                  >
+                    <option>Marinduque</option>
+                  </select>
+                </div>
+
+                {/* Municipality */}
+                <div>
+                  <label className={`text-xs font-medium block mb-1 ${isInvalid('municipality') ? 'text-red-500' : 'text-gray-500'}`}>
+                    Municipality <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="municipality"
+                    value={formData.municipality}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none bg-white transition-colors ${getBorderColor('municipality')}`}
+                  >
+                    <option value="">Select Municipality</option>
+                    {Object.keys(MARINDUQUE_DATA).map(mun => (
+                      <option key={mun} value={mun}>{mun}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Barangay */}
+                <div>
+                  <label className={`text-xs font-medium block mb-1 ${isInvalid('barangay') ? 'text-red-500' : 'text-gray-500'}`}>
+                    Barangay <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="barangay"
+                    value={formData.barangay}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    disabled={!formData.municipality}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none bg-white transition-colors ${getBorderColor('barangay')} disabled:opacity-50`}
+                  >
+                    <option value="">Select Barangay</option>
+                    {availableBarangays.map(brgy => (
+                      <option key={brgy} value={brgy}>{brgy}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Zip Code */}
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">
+                    Zip Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="zipCode"
+                    type="text"
+                    value={formData.zipCode}
+                    readOnly
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 outline-none"
+                  />
+                </div>
               </div>
             </div>
           </div>

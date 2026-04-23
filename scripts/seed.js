@@ -19,6 +19,37 @@ async function main() {
   });
   console.log('✅ Admin user created:', admin.email);
 
+  // Clear existing stalls to prevent duplicate unique keys easily, or we can just upsert.
+  // We'll delete Many to guarantee fresh start for stalls
+  await prisma.stall.deleteMany({});
+  
+  // Pre-seed stalls
+  const predefinedStalls = [
+    { stallNumber: 'V-01', location: 'Section A - Vegetables', size: '2x3 meters', monthlyRate: 1500, status: 'AVAILABLE', productType: JSON.stringify(['Vegetables & Fruits']) },
+    { stallNumber: 'V-02', location: 'Section A - Vegetables', size: '2x3 meters', monthlyRate: 1500, status: 'AVAILABLE', productType: JSON.stringify(['Vegetables & Fruits']) },
+    { stallNumber: 'V-03', location: 'Section A - Vegetables', size: '3x3 meters', monthlyRate: 2000, status: 'AVAILABLE', productType: JSON.stringify(['Vegetables & Fruits']) },
+    { stallNumber: 'V-04', location: 'Section A - Vegetables', size: '3x3 meters', monthlyRate: 2000, status: 'AVAILABLE', productType: JSON.stringify(['Vegetables & Fruits']) },
+    
+    { stallNumber: 'D-01', location: 'Section B - Dry Goods', size: '3x3 meters', monthlyRate: 2500, status: 'AVAILABLE', productType: JSON.stringify(['Dry Goods', 'Clothing & Apparel']) },
+    { stallNumber: 'D-02', location: 'Section B - Dry Goods', size: '3x3 meters', monthlyRate: 2500, status: 'AVAILABLE', productType: JSON.stringify(['Dry Goods', 'Clothing & Apparel']) },
+    { stallNumber: 'D-03', location: 'Section B - Dry Goods', size: '3x3 meters', monthlyRate: 2500, status: 'AVAILABLE', productType: JSON.stringify(['Dry Goods', 'Hardware & Tools']) },
+    { stallNumber: 'D-04', location: 'Section B - Dry Goods', size: '3x4 meters', monthlyRate: 3000, status: 'AVAILABLE', productType: JSON.stringify(['Dry Goods']) },
+
+    { stallNumber: 'M-01', location: 'Section C - Meat & Seafood', size: '2x2 meters', monthlyRate: 3500, status: 'AVAILABLE', productType: JSON.stringify(['Meat & Seafood']) },
+    { stallNumber: 'M-02', location: 'Section C - Meat & Seafood', size: '2x2 meters', monthlyRate: 3500, status: 'AVAILABLE', productType: JSON.stringify(['Meat & Seafood']) },
+    
+    { stallNumber: 'F-01', location: 'Section D - Food Court', size: '4x4 meters', monthlyRate: 4500, status: 'AVAILABLE', productType: JSON.stringify(['Cooked Food', 'Beverages']) },
+    { stallNumber: 'F-02', location: 'Section D - Food Court', size: '4x4 meters', monthlyRate: 4500, status: 'AVAILABLE', productType: JSON.stringify(['Cooked Food', 'Beverages']) },
+  ];
+
+  console.log('📦 Pre-seeding stalls...');
+  for (const stall of predefinedStalls) {
+    await prisma.stall.create({
+      data: stall,
+    });
+  }
+  console.log(`✅ ${predefinedStalls.length} Stalls created successfully.`);
+
   // Create vendor user with complete profile
   const vendorPassword = await bcrypt.hash('vendor123456', 10);
   const vendor = await prisma.user.upsert({

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar } from 'recharts'
-import { TrendingUp, CreditCard, AlertCircle, Clock } from 'lucide-react'
+import { TrendingUp, CreditCard, AlertCircle, Clock, Download } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 interface Summary {
   totalRevenue: number
@@ -43,6 +44,49 @@ export default function AdminReportsPage() {
     if (customStart && customEnd) fetchReport('custom', customStart, customEnd)
   }
 
+  function handleExport() {
+    if (!summary) return
+
+    const wb = XLSX.utils.book_new()
+    
+    // Sheet 1: Summary
+    const summaryData = [
+      ['Metric', 'Value'],
+      ['Total Revenue', summary.totalRevenue],
+      ['Total Overdue', summary.totalOverdue],
+      ['Total Pending', summary.totalPending],
+      ['Total Transactions', summary.totalTransactions],
+    ]
+    if (summary.startDate) summaryData.push(['Period Start', summary.startDate])
+    if (summary.endDate) summaryData.push(['Period End', summary.endDate])
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData)
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary')
+
+    // Sheet 2: Monthly Breakdown
+    if (monthly && monthly.length > 0) {
+      const monthlyData = monthly.map(m => ({
+        Month: m.month,
+        Revenue: m.revenue,
+        Transactions: m.count
+      }))
+      const wsMonthly = XLSX.utils.json_to_sheet(monthlyData)
+      XLSX.utils.book_append_sheet(wb, wsMonthly, 'Monthly Breakdown')
+    }
+
+    // Sheet 3: Payment Types
+    if (summary.paymentTypeBreakdown && Object.keys(summary.paymentTypeBreakdown).length > 0) {
+      const typeData = Object.entries(summary.paymentTypeBreakdown).map(([k, v]) => ({
+        Type: k,
+        Amount: v
+      }))
+      const wsTypes = XLSX.utils.json_to_sheet(typeData)
+      XLSX.utils.book_append_sheet(wb, wsTypes, 'Payment Types')
+    }
+
+    XLSX.writeFile(wb, `Financial_Report_${type}.xlsx`)
+  }
+
   const tabs = [
     { key: 'daily', label: 'Today' },
     { key: 'weekly', label: 'This Week' },
@@ -52,9 +96,18 @@ export default function AdminReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Financial Reports</h1>
-        <p className="text-sm text-gray-500 mt-1">Revenue analytics and payment summaries</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Financial Reports</h1>
+          <p className="text-sm text-gray-500 mt-1">Revenue analytics and payment summaries</p>
+        </div>
+        <button
+          onClick={handleExport}
+          className="flex items-center justify-center gap-2 bg-[#1e4d2b] hover:bg-[#2d6a4f] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+        >
+          <Download className="w-4 h-4" />
+          Export to Excel
+        </button>
       </div>
 
       {/* Period tabs */}
@@ -73,7 +126,7 @@ export default function AdminReportsPage() {
           </button>
         ))}
         {type === 'custom' && (
-          <div className="flex items-center gap-2 ml-2">
+          <div className="flex flex-wrap items-center gap-2 ml-2">
             <input
               type="date"
               value={customStart}

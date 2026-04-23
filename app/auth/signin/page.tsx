@@ -66,8 +66,16 @@ export default function SignInPage() {
         )}
 
         {error && (
-          <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">
-            {error}
+          <div className="mb-4 flex flex-col gap-3">
+            <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">
+              {error}
+            </div>
+            <Link
+              href="/stalls"
+              className="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-semibold py-2 rounded-lg transition-colors border border-gray-300"
+            >
+              Continue as Guest to View Stalls
+            </Link>
           </div>
         )}
 
@@ -114,13 +122,20 @@ export default function SignInPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-5">
-          Don&apos;t have an account?{' '}
-          <Link href="/auth/signup" className="text-[#1e4d2b] font-semibold hover:underline">
-            Register
-          </Link>
-        </p>
+        <div className="flex flex-col gap-2 mt-5">
+          <p className="text-center text-sm text-gray-500">
+            Don&apos;t have an account?{' '}
+            <Link href="/auth/signup" className="text-[#1e4d2b] font-semibold hover:underline">
+              Register
+            </Link>
+          </p>
+          <p className="text-center text-sm text-gray-500">
+            Or{' '}
+            <Link href="/stalls" className="text-[#1e4d2b] font-semibold hover:underline">
+              Browse stalls as a guest
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
-}
