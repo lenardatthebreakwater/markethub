@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, X, ImagePlus, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, ImagePlus, Loader2, FileText } from 'lucide-react'
 import Image from 'next/image'
 
 interface Stall {
@@ -66,6 +66,8 @@ export default function AdminStallsPage() {
   const [uploadingImg, setUploadingImg] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
+  const [reportModal, setReportModal] = useState<{ open: boolean; stall: Stall | null; data: any }>({ open: false, stall: null, data: null })
+  const [loadingReport, setLoadingReport] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   async function fetchStalls() {
@@ -167,6 +169,24 @@ export default function AdminStallsPage() {
     setProcessing(false)
   }
 
+  async function openReport(s: Stall) {
+    setReportModal({ open: true, stall: s, data: null })
+    setLoadingReport(true)
+    try {
+      const res = await fetch(`/api/admin/stalls/${s.id}/report`)
+      if (res.ok) {
+        const data = await res.json()
+        setReportModal({ open: true, stall: s, data })
+      } else {
+        toast.error('Failed to load stall report.')
+      }
+    } catch {
+      toast.error('Failed to load stall report.')
+    } finally {
+      setLoadingReport(false)
+    }
+  }
+
   const available = stalls.filter((s) => s.status === 'AVAILABLE').length
   const occupied = stalls.filter((s) => s.status === 'OCCUPIED').length
 
@@ -248,6 +268,9 @@ export default function AdminStallsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
+                          <button onClick={() => openReport(s)} className="p-1.5 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors" title="View Report">
+                            <FileText className="h-4 w-4" />
+                          </button>
                           <button onClick={() => openEdit(s)} className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors" title="Edit">
                             <Pencil className="h-4 w-4" />
                           </button>
@@ -439,6 +462,111 @@ export default function AdminStallsPage() {
                 {processing ? 'Deleting...' : 'Delete'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {reportModal.open && reportModal.stall && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setReportModal({ open: false, stall: null, data: null })} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <FileText className="h-5 w-5 text-[#1e4d2b]" />
+                Stall #{reportModal.stall.stallNumber} Report
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Admin Only View · Complete Occupancy & Payment History</p>
+            </div>
+
+            {loadingReport ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-[#1e4d2b]" />
+              </div>
+            ) : reportModal.data ? (
+              <div className="space-y-8">
+                {/* Occupancy History */}
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">Occupancy History</h3>
+                  {reportModal.data.applications.length === 0 ? (
+                    <p className="text-sm text-gray-500 px-4">No applications found for this stall.</p>
+                  ) : (
+                    <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                          <tr>
+                            <th className="px-4 py-3">Vendor / Business</th>
+                            <th className="px-4 py-3">Type</th>
+                            <th className="px-4 py-3">Status</th>
+                            <th className="px-4 py-3">Contract Period</th>
+                            <th className="px-4 py-3">Applied On</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {reportModal.data.applications.map((app: any) => (
+                            <tr key={app.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-gray-800">{app.vendor.businessName}</p>
+                                <p className="text-xs text-gray-500">{app.vendor.user?.name}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium">{app.applicationType}</span>
+                              </td>
+                              <td className="px-4 py-3"><StatusBadge status={app.status} /></td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {app.contractStart && app.contractEnd ? (
+                                  `${new Date(app.contractStart).toLocaleDateString()} - ${new Date(app.contractEnd).toLocaleDateString()}`
+                                ) : '—'}
+                              </td>
+                              <td className="px-4 py-3 text-gray-500">{new Date(app.createdAt).toLocaleDateString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Payment Ledger */}
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">Payment Ledger</h3>
+                  {reportModal.data.payments.length === 0 ? (
+                    <p className="text-sm text-gray-500 px-4">No payments found for this stall.</p>
+                  ) : (
+                    <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                          <tr>
+                            <th className="px-4 py-3">Vendor</th>
+                            <th className="px-4 py-3">Amount</th>
+                            <th className="px-4 py-3">Type</th>
+                            <th className="px-4 py-3">Period</th>
+                            <th className="px-4 py-3">Due Date</th>
+                            <th className="px-4 py-3">Date Paid</th>
+                            <th className="px-4 py-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {reportModal.data.payments.map((p: any) => (
+                            <tr key={p.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-800">{p.vendor.businessName}</td>
+                              <td className="px-4 py-3 font-semibold text-[#1e4d2b]">₱{p.amount.toLocaleString()}</td>
+                              <td className="px-4 py-3 text-gray-600">{p.paymentType}</td>
+                              <td className="px-4 py-3 text-gray-600">{p.month && p.year ? `${p.month}/${p.year}` : '—'}</td>
+                              <td className="px-4 py-3 text-gray-500">{new Date(p.dueDate).toLocaleDateString()}</td>
+                              <td className="px-4 py-3 text-gray-800">{p.paidDate ? new Date(p.paidDate).toLocaleDateString() : '—'}</td>
+                              <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
