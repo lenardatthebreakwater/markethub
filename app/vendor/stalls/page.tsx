@@ -14,12 +14,14 @@ interface Stall {
   monthlyRate: number
   status: string
   images: string | null
+  productType: string | null
 }
 
 interface ApplicationForm {
   stallId: string
   stallNumber: string
   businessType: string
+  productType: string | null
   notes: string
 }
 
@@ -90,6 +92,7 @@ export default function VendorStallsPage() {
     stallId: '',
     stallNumber: '',
     businessType: '',
+    productType: null,
     notes: '',
   })
 
@@ -101,7 +104,13 @@ export default function VendorStallsPage() {
   }, [])
 
   function handleApplyClick(stall: Stall) {
-    setForm({ stallId: stall.id, stallNumber: stall.stallNumber, businessType: '', notes: '' })
+    setForm({ 
+      stallId: stall.id, 
+      stallNumber: stall.stallNumber, 
+      businessType: stall.productType || '', 
+      productType: stall.productType || null,
+      notes: '' 
+    })
     setSelectedStall(null)
     setShowApplyModal(true)
   }
@@ -317,20 +326,26 @@ export default function VendorStallsPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1.5 uppercase tracking-wider">Business Type</label>
-                <select
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e4d2b]"
-                  value={form.businessType}
-                  onChange={(e) => setForm({ ...form, businessType: e.target.value })}
-                >
-                  <option value="">Select Business Type</option>
-                  <option>Vegetables & Fruits</option>
-                  <option>Meat & Seafood</option>
-                  <option>Dry Goods</option>
-                  <option>Cooked Food</option>
-                  <option>Clothing & Apparel</option>
-                  <option>Hardware & Tools</option>
-                  <option>Others</option>
-                </select>
+                {form.productType ? (
+                  <div className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-100 text-gray-700 cursor-not-allowed">
+                    {form.productType}
+                  </div>
+                ) : (
+                  <select
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e4d2b]"
+                    value={form.businessType}
+                    onChange={(e) => setForm({ ...form, businessType: e.target.value })}
+                  >
+                    <option value="">Select Business Type</option>
+                    <option>Vegetables & Fruits</option>
+                    <option>Meat & Seafood</option>
+                    <option>Dry Goods</option>
+                    <option>Cooked Food</option>
+                    <option>Clothing & Apparel</option>
+                    <option>Hardware & Tools</option>
+                    <option>Others</option>
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1.5 uppercase tracking-wider">Proposed Use / Notes</label>
